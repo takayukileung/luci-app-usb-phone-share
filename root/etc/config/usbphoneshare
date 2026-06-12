@@ -1,0 +1,8 @@
+config global
+    option phone_type 'android'
+    option ifname 'usb0'
+    option enable_wan '1'
+    option enable_ipv6 '0'
+    option auto_reconnect '0'
+    option check_interval '1'
+    option check_ip '114.114.114.114'

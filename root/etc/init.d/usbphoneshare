@@ -1,0 +1,27 @@
+#!/bin/sh /etc/rc.common
+START=95
+STOP=10
+
+start() {
+    # 循环检测USB网卡，最多等待30秒，检测到则拉起接口
+    (
+        count=0
+        while [ $count -lt 30 ]; do
+            if uci -q get network.usbwan >/dev/null; then
+                ifname=$(uci -q get network.usbwan.device)
+                if [ -n "$ifname" ] && ip link show "$ifname" >/dev/null 2>&1; then
+                    ifup usbwan 2>/dev/null
+                    logger -t usbphoneshare "开机检测到$ifname，已拉起USB共享接口"
+                    exit 0
+                fi
+            fi
+            sleep 1
+            count=$((count + 1))
+        done
+        logger -t usbphoneshare "开机30秒未检测到USB网卡，跳过拉起"
+    ) &
+}
+
+stop() {
+    return 0
+}

@@ -1,0 +1,72 @@
+<style>
+.aurora-status-card {
+    background: var(--card-bg, #ffffff);
+    border: 1px solid var(--border-color, #e5e7eb);
+    border-radius: 12px;
+    padding: 16px;
+    line-height: 1.8;
+    color: var(--text-primary, #1f2937);
+}
+.text-success {
+    color: var(--success, #059669);
+}
+.text-danger {
+    color: var(--danger, #dc2626);
+}
+.text-primary {
+    color: var(--primary, #1677ff);
+}
+.tip-box {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: var(--danger-bg, #fef2f2);
+    border: 1px solid var(--danger-border, #fecaca);
+    border-radius: 8px;
+    color: var(--danger, #dc2626);
+    font-size: 13px;
+}
+</style>
+
+<script>
+function refreshStatus() {
+    L.XHR.get('<%=luci.dispatcher.build_url("admin/network/usbphoneshare", "status")%>', null,
+        function(res) {
+            if (!res) return;
+            let html = '';
+            html += '<p>当前网卡：<span class="text-primary"><b>' + res.ifname + '</b></span></p>';
+            if (res.usb_device) html += '<p>USB设备：' + res.usb_device + '</p>';
+            html += '<p>网卡状态：' + (res.iface_up == '1' ? '<span class="text-success">已连接/运行中</span>' : '<span class="text-danger">未识别/未连接</span>') + '</p>';
+            html += '<p>usbmuxd服务：' + (res.usbmuxd_running == '1' ? '<span class="text-success">运行中</span>' : '<span class="text-danger">未运行</span>') + '</p>';
+            html += '<p>定时任务服务：' + (res.cron_running == '1' ? '<span class="text-success">运行中</span>' : '<span class="text-danger">未运行</span>') + '</p>';
+            html += '<p>USB-WAN接口：' + (res.wan_usb_exist == '1' ? '<span class="text-success">已创建</span>' : '<span class="text-danger">不存在</span>') + '</p>';
+            html += '<p>IPv6 WAN6：' + (res.ipv6_wan6 == '1' ? '<span class="text-success">已启用</span>' : '<span class="text-danger">未启用</span>') + '</p>';
+            html += '<p>自动重连：' + (res.reconnect_enable == '1' ? '<span class="text-success">已启用</span>' : '<span class="text-danger">未启用</span>') + '</p>';
+            if (res.ipv4_addr) html += '<p>IPv4地址：' + res.ipv4_addr + '</p>';
+            if (res.ipv6_addr) html += '<p>IPv6地址：' + res.ipv6_addr + '</p>';
+            if (res.rx_total) html += '<p>已下载：' + res.rx_total + '</p>';
+            if (res.tx_total) html += '<p>已上传：' + res.tx_total + '</p>';
+
+            // 异常智能排错提示
+            let tips = [];
+            if (res.iface_up == '0') {
+                tips.push('请检查数据线是否支持数据传输，手机是否已开启USB网络共享');
+            }
+            if (res.phone_type == 'iphone' && res.usbmuxd_running == '0') {
+                tips.push('iPhone模式下usbmuxd服务未运行，请点击「一键应用配置」');
+            }
+            if (res.reconnect_enable == '1' && res.cron_running == '0') {
+                tips.push('自动重连已开启但cron服务未运行，定时检测不会生效');
+            }
+            if (tips.length > 0) {
+                html += '<div class="tip-box">排错提示：<br>• ' + tips.join('<br>• ') + '</div>';
+            }
+
+            document.getElementById('usbstatebox').innerHTML = html;
+        }
+    );
+}
+refreshStatus();
+setInterval(refreshStatus, 3000);
+</script>
+
+<div id="usbstatebox" class="aurora-status-card">正在获取状态...</div>
